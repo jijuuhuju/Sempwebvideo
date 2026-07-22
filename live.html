@@ -1,0 +1,178 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>【生放送】センプの😀雑談ライブ会場 - センプウェブビデオ</title>
+  <style>
+    body { background-color: #0f0f0f; color: #fff; font-family: Arial, sans-serif; margin: 0; padding: 0; }
+    header { padding: 12px 24px; border-bottom: 1px solid #272727; display: flex; justify-content: space-between; align-items: center; }
+    .logo { font-size: 20px; font-weight: bold; color: #3ea6ff; text-decoration: none; }
+    .search-box { background: #121212; border: 1px solid #303030; padding: 8px 16px; border-radius: 40px; width: 300px; color: white; }
+
+    /* レイアウト */
+    .container { display: flex; max-width: 1200px; margin: 20px auto; gap: 24px; padding: 0 20px; }
+    .main-content { flex: 2; }
+    .chat-sidebar { flex: 1; background: #181818; border: 1px solid #2d2d2d; border-radius: 12px; display: flex; flex-direction: column; height: 500px; }
+
+    /* 動画プレイヤーの枠を「😀の動くステージ」にする */
+    .video-wrapper { 
+      width: 100%; 
+      background: radial-gradient(circle, #222 0%, #050505 100%); /* 配信ステージ風の背景 */
+      border-radius: 12px; 
+      overflow: hidden; 
+      aspect-ratio: 16/9; 
+      position: relative; 
+    }
+
+    /* 【CSSアニメーション】😀を画面内で可愛くジャンプ・浮遊させる */
+    .avatar-emoji {
+      position: absolute;
+      font-size: 80px;
+      top: 35%;
+      left: 42%;
+      user-select: none;
+      animation: talkAndFloat 3s ease-in-out infinite alternate;
+    }
+
+    /* おしゃべりしながら浮き沈みするアニメーション */
+    @keyframes talkAndFloat {
+      0% {
+        transform: translateY(0) scale(1);
+      }
+      25% {
+        transform: translateY(-15px) scale(1.05) rotate(5deg);
+      }
+      50% {
+        transform: translateY(0) scale(0.95) rotate(-5deg);
+      }
+      75% {
+        transform: translateY(-20px) scale(1.1) rotate(3deg);
+      }
+      100% {
+        transform: translateY(0) scale(1);
+      }
+    }
+
+    /* 配信画面のタイトル・バッジ */
+    .video-title { font-size: 20px; margin: 12px 0; font-weight: bold; display: flex; align-items: center; gap: 8px; }
+    .live-tag { background: #ff0000; color: white; font-size: 12px; padding: 2px 6px; border-radius: 4px; }
+    .channel-bar { display: flex; justify-content: space-between; align-items: center; padding-bottom: 20px; }
+
+    /* ライブチャット */
+    .chat-header { padding: 12px; border-bottom: 1px solid #2d2d2d; font-weight: bold; font-size: 14px; }
+    .chat-messages { flex: 1; padding: 12px; overflow-y: auto; display: flex; flex-direction: column; gap: 10px; font-size: 13px; }
+    .chat-item { line-height: 1.4; animation: chatFadeIn 0.2s ease-out; }
+    .chat-user { color: #aaaaaa; font-weight: bold; margin-right: 6px; }
+    .chat-user.self { color: #3ea6ff; }
+    
+    .chat-input-wrap { padding: 12px; border-top: 1px solid #2d2d2d; display: flex; gap: 8px; }
+    .chat-input { flex: 1; background: #272727; border: none; border-radius: 18px; color: white; padding: 8px 12px; font-size: 13px; }
+    .chat-input:focus { outline: 1px solid #3ea6ff; }
+    .btn-send { background: #3ea6ff; color: black; border: none; padding: 8px 14px; border-radius: 18px; font-weight: bold; cursor: pointer; }
+
+    @keyframes chatFadeIn { from { opacity: 0; transform: translateY(4px); } to { opacity: 1; transform: translateY(0); } }
+  </style>
+</head>
+<body>
+
+  <header>
+    <a href="index.html" class="logo">🏠 センプウェブビデオ</a>
+    <input type="text" id="searchBox" class="search-box" placeholder="動画タイトルを検索" onkeypress="goToHomeSearch(event)">
+  </header>
+
+  <div class="container">
+    <!-- 左側：😀が動くバーチャル配信画面 -->
+    <div class="main-content">
+      <div class="video-wrapper">
+        <!-- 【変更】videoタグの代わりに、CSSでポよぽよ動く😀を配置 -->
+        <div class="avatar-emoji" id="liveEmoji">😀</div>
+      </div>
+      <div class="video-title"><span class="live-tag">LIVE</span> 【生放送】センプの😀雑談ライブ会場</div>
+      
+      <div class="channel-bar">
+        <div>
+          <div style="font-weight:bold;">センプ公式チャンネル</div>
+          <div style="font-size:12px; color:#ff4e4e;">● 5,820 人が視聴中</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- 右側：チャット欄 -->
+    <div class="chat-sidebar">
+      <div class="chat-header">上位のチャット（ライブ配信）</div>
+      <div id="chatMessages" class="chat-messages"></div>
+      
+      <div class="chat-input-wrap">
+        <input type="text" id="chatInput" class="chat-input" placeholder="チャットを入力...">
+        <button class="btn-send" onclick="sendChat()">送信</button>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    function goToHomeSearch(event) {
+      if (event.key === 'Enter') {
+        const query = document.getElementById('searchBox').value.trim();
+        window.location.href = `index.html?search=${encodeURIComponent(query)}`;
+      }
+    }
+
+    // 😀の雑談テーマに合わせた、リスナーたちのサクラコメント
+    const botMessages = [
+      { user: "たなか", text: "😀がめっちゃ動いてるｗｗｗ" },
+      { user: "NPC-99", text: "わこつ！今日の雑談テーマ何？" },
+      { user: "ゲーム好き", text: "この動きジワる" },
+      { user: "sempマニア", text: "センプさん今日も😀のキレが良いですね" },
+      { user: "sakura", text: "なんか楽しそうに喋ってて草" },
+      { user: "ハロー", text: "うおおおおおおお" },
+      { user: "匿名くん", text: "チャット拾ってーー！" },
+      { user: "yoshi", text: "😀😀😀😀😀" },
+      { user: "名無しクリエーター", text: "世界一平和な配信空間だな" }
+    ];
+
+    // 時々😀がテンション上がって表情が変わるためのリスト
+    const emojiFaces = ["😀", "😆", "😮", "🤣", "😉"];
+
+    const chatMessagesContainer = document.getElementById('chatMessages');
+
+    function appendMessage(user, text, isSelf = false) {
+      const item = document.createElement('div');
+      item.className = "chat-item";
+      const userClass = isSelf ? "chat-user self" : "chat-user";
+      item.innerHTML = `<span class="${userClass}">${user}:</span><span>${text}</span>`;
+      chatMessagesContainer.appendChild(item);
+      chatMessagesContainer.scrollTop = chatMessagesContainer.scrollHeight;
+
+      // 【連動ギミック】チャットが流れるたびに、😀がたまに口を開けたり表情を変える
+      if (!isSelf && Math.random() > 0.4) {
+        const randomFace = emojiFaces[Math.floor(Math.random() * emojiFaces.length)];
+        document.getElementById('liveEmoji').innerText = randomFace;
+      }
+    }
+
+    function sendChat() {
+      const input = document.getElementById('chatInput');
+      const text = input.value.trim();
+      if (!text) return;
+
+      appendMessage("あなた（配信主）", text, true);
+      // 自分が発言したら😀を笑顔にする
+      document.getElementById('liveEmoji').innerText = "😆";
+      input.value = "";
+    }
+
+    document.getElementById('chatInput').addEventListener('keypress', (e) => { if (e.key === 'Enter') sendChat(); });
+
+    // 1.5秒〜3秒おきにサクラのチャットを流す
+    function startBotChat() {
+      setInterval(() => {
+        const randomMsg = botMessages[Math.floor(Math.random() * botMessages.length)];
+        appendMessage(randomMsg.user, randomMsg.text, false);
+      }, Math.random() * 1500 + 1500);
+    }
+
+    startBotChat();
+  </script>
+</body>
+</html>
