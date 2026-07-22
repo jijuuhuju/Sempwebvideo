@@ -15,43 +15,57 @@
     .main-content { flex: 2; }
     .chat-sidebar { flex: 1; background: #181818; border: 1px solid #2d2d2d; border-radius: 12px; display: flex; flex-direction: column; height: 500px; }
 
-    /* 動画プレイヤーの枠を「😀の動くステージ」にする */
+    /* 配信ステージ背景 */
     .video-wrapper { 
       width: 100%; 
-      background: radial-gradient(circle, #222 0%, #050505 100%); /* 配信ステージ風の背景 */
+      background: radial-gradient(circle, #222 0%, #050505 100%); 
       border-radius: 12px; 
       overflow: hidden; 
       aspect-ratio: 16/9; 
       position: relative; 
     }
 
-    /* 【CSSアニメーション】😀を画面内で可愛くジャンプ・浮遊させる */
+    /* 【変更】😀の初期配置スタイル */
     .avatar-emoji {
       position: absolute;
       font-size: 80px;
       top: 35%;
       left: 42%;
       user-select: none;
+      transition: all 0.3s ease-in-out; /* 離席する時のスムーズな移動用 */
+    }
+
+    /* 【追加】通常時のおしゃべり浮遊アニメーション */
+    .avatar-emoji.floating {
       animation: talkAndFloat 3s ease-in-out infinite alternate;
     }
 
-    /* おしゃべりしながら浮き沈みするアニメーション */
+    /* 【追加】テンション爆上げ時の大はしゃぎアニメーション */
+    .avatar-emoji.excited {
+      animation: superExcited 1s linear infinite;
+    }
+
     @keyframes talkAndFloat {
-      0% {
-        transform: translateY(0) scale(1);
-      }
-      25% {
-        transform: translateY(-15px) scale(1.05) rotate(5deg);
-      }
-      50% {
-        transform: translateY(0) scale(0.95) rotate(-5deg);
-      }
-      75% {
-        transform: translateY(-20px) scale(1.1) rotate(3deg);
-      }
-      100% {
-        transform: translateY(0) scale(1);
-      }
+      0% { transform: translateY(0) scale(1); }
+      25% { transform: translateY(-15px) scale(1.05) rotate(5deg); }
+      50% { transform: translateY(0) scale(0.95) rotate(-5deg); }
+      75% { transform: translateY(-20px) scale(1.1) rotate(3deg); }
+      100% { transform: translateY(0) scale(1); }
+    }
+
+    @keyframes superExcited {
+      0% { transform: translate(0, 0) scale(1.1) rotate(0deg); }
+      25% { transform: translate(10px, -15px) scale(1.2) rotate(10deg); }
+      50% { transform: translate(-10px, 0px) scale(1.1) rotate(-10deg); }
+      75% { transform: translate(5px, -20px) scale(1.2) rotate(5deg); }
+      100% { transform: translate(0, 0) scale(1.1) rotate(0deg); }
+    }
+
+    /* 【追加】怒って離席したときのスタイル（アニメを止めて画面外へ移動） */
+    .avatar-emoji.away {
+      top: 35%;
+      left: -150px; /* 左側の画面の外側に隠れる */
+      transform: scale(1) rotate(-15deg);
     }
 
     /* 配信画面のタイトル・バッジ */
@@ -64,7 +78,7 @@
     .chat-messages { flex: 1; padding: 12px; overflow-y: auto; display: flex; flex-direction: column; gap: 10px; font-size: 13px; }
     .chat-item { line-height: 1.4; animation: chatFadeIn 0.2s ease-out; }
     .chat-user { color: #aaaaaa; font-weight: bold; margin-right: 6px; }
-    .chat-user.self { color: #3ea6ff; }
+    .chat-user.self { color: #3ea6ff; } /* ゲスト（自分）は水色 */
     
     .chat-input-wrap { padding: 12px; border-top: 1px solid #2d2d2d; display: flex; gap: 8px; }
     .chat-input { flex: 1; background: #272727; border: none; border-radius: 18px; color: white; padding: 8px 12px; font-size: 13px; }
@@ -85,15 +99,15 @@
     <!-- 左側：😀が動くバーチャル配信画面 -->
     <div class="main-content">
       <div class="video-wrapper">
-        <!-- 【変更】videoタグの代わりに、CSSでポよぽよ動く😀を配置 -->
-        <div class="avatar-emoji" id="liveEmoji">😀</div>
+        <!-- 初期状態で浮遊アニメーションクラスを付与 -->
+        <div class="avatar-emoji floating" id="liveEmoji">😀</div>
       </div>
       <div class="video-title"><span class="live-tag">LIVE</span> 【生放送】センプの😀雑談ライブ会場</div>
       
       <div class="channel-bar">
         <div>
           <div style="font-weight:bold;">センプ公式チャンネル</div>
-          <div style="font-size:12px; color:#ff4e4e;">● 5,820 人が視聴中</div>
+          <div style="font-size:12px; color:#ff4e4e;">● <span id="liveCountText">5,820</span> 人が視聴中</div>
         </div>
       </div>
     </div>
@@ -118,7 +132,7 @@
       }
     }
 
-    // 😀の雑談テーマに合わせた、リスナーたちのサクラコメント
+    // サクラコメントのプール
     const botMessages = [
       { user: "たなか", text: "😀がめっちゃ動いてるｗｗｗ" },
       { user: "NPC-99", text: "わこつ！今日の雑談テーマ何？" },
@@ -131,10 +145,11 @@
       { user: "名無しクリエーター", text: "世界一平和な配信空間だな" }
     ];
 
-    // 時々😀がテンション上がって表情が変わるためのリスト
     const emojiFaces = ["😀", "😆", "😮", "🤣", "😉"];
-
     const chatMessagesContainer = document.getElementById('chatMessages');
+
+    let currentViewers = 5820;
+    let isAway = false; // 離席中かどうかのフラグ
 
     function appendMessage(user, text, isSelf = false) {
       const item = document.createElement('div');
@@ -144,27 +159,66 @@
       chatMessagesContainer.appendChild(item);
       chatMessagesContainer.scrollTop = chatMessagesContainer.scrollHeight;
 
-      // 【連動ギミック】チャットが流れるたびに、😀がたまに口を開けたり表情を変える
-      if (!isSelf && Math.random() > 0.4) {
-        const randomFace = emojiFaces[Math.floor(Math.random() * emojiFaces.length)];
-        document.getElementById('liveEmoji').innerText = randomFace;
+      // 離席中なら、チャットが流れても表情変化の処理をスルーする
+      if (isAway) return;
+
+      const emojiEl = document.getElementById('liveEmoji');
+
+      if (!isSelf) {
+        const rand = Math.random();
+
+        if (rand < 0.1) {
+          // 【新機能】10%の確率でブチギレて数秒間離席するモードへ突入！
+          isAway = true;
+          emojiEl.innerText = "😡";
+          emojiEl.className = "avatar-emoji away"; // 画面外へスライド移動
+          
+          // 4秒後に機嫌を直して戻ってくる
+          setTimeout(() => {
+            emojiEl.innerText = "😀";
+            emojiEl.className = "avatar-emoji floating"; // 通常の浮遊に戻る
+            isAway = false;
+          }, 4000);
+
+        } else if (rand < 0.3) {
+          // 【新機能】20%の確率でテンションが爆上がりして「大はしゃぎアニメーション」になる
+          emojiEl.innerText = "🤪";
+          emojiEl.className = "avatar-emoji excited";
+          
+          // 1.5秒後に通常の揺れに戻す
+          setTimeout(() => {
+            if (!isAway) {
+              emojiEl.innerText = "😀";
+              emojiEl.className = "avatar-emoji floating";
+            }
+          }, 1500);
+
+        } else if (rand < 0.7) {
+          // 通常のコロコロ表情変化パターン
+          const randomFace = emojiFaces[Math.floor(Math.random() * emojiFaces.length)];
+          emojiEl.innerText = randomFace;
+        }
       }
     }
 
+    // 自分のチャットを送信する
     function sendChat() {
       const input = document.getElementById('chatInput');
       const text = input.value.trim();
       if (!text) return;
 
-      appendMessage("あなた（配信主）", text, true);
-      // 自分が発言したら😀を笑顔にする
-      document.getElementById('liveEmoji').innerText = "😆";
+      // 【変更】「あなた（配信主）」から「ゲスト」に書き換えました
+      appendMessage("ゲスト", text, true);
+
+      if (!isAway) {
+        document.getElementById('liveEmoji').innerText = "😆";
+      }
       input.value = "";
     }
 
     document.getElementById('chatInput').addEventListener('keypress', (e) => { if (e.key === 'Enter') sendChat(); });
 
-    // 1.5秒〜3秒おきにサクラのチャットを流す
+    // 自動チャット送信（1.5秒〜3秒おき）
     function startBotChat() {
       setInterval(() => {
         const randomMsg = botMessages[Math.floor(Math.random() * botMessages.length)];
@@ -172,7 +226,18 @@
       }, Math.random() * 1500 + 1500);
     }
 
+    // 3秒ごとに視聴者数をランダム増減
+    function updateViewerCount() {
+      setInterval(() => {
+        const change = Math.floor(Math.random() * 36) - 15; 
+        currentViewers += change;
+        document.getElementById('liveCountText').innerText = currentViewers.toLocaleString();
+      }, 3000);
+    }
+
+    // 初期起動
     startBotChat();
+    updateViewerCount();
   </script>
 </body>
 </html>
