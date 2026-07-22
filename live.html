@@ -63,11 +63,25 @@
       { user: "たなか", text: "😀めっちゃ動くやんｗｗ" }, { user: "NPC-99", text: "わこつ！" }, { user: "ゲーム好き", text: "ジワる" },
       { user: "sempマニア", text: "キレが良いですね" }, { user: "sakura", text: "楽しそう草" }, { user: "匿名くん", text: "チャット拾って！" }
     ];
+    const replies = [ "それな！それな！", "え、まじで！？ｗ", "チャットありがとうー！", "おもしろいこと言うねー！", "ヤラララ〜♪" ];
+    // 【新機能】予兆時のイライラセリフと、復帰時の挨拶セリフのプール
+    const angryWarnings = [ "あ？", "おい…", "なんか今ムカつくチャットあったな？", "ちょっと静かにして" ];
+    const returnGratings = [ "ただいま！復活！", "ふぅ、頭冷やしてきたわ", "お待たせ！配信再開！", "逃げるわけないだろ！" ];
+    
     const emojiFaces = ["😀", "😆", "😮", "🤣", "😉"];
-    let viewers = 5820, isAway = false, mouthInterval;
+    let viewers = 5820, isAway = false, isIrritated = false, mouthInterval, bubbleTimeout;
+    
     function startMouth() {
       clearInterval(mouthInterval);
       mouthInterval = setInterval(() => { if (!isAway) document.getElementById('liveEmoji').innerText = emojiFaces[Math.floor(Math.random() * emojiFaces.length)]; }, 1000);
+    }
+    function showTalk(msg) {
+      if (isAway) return;
+      clearInterval(mouthInterval); clearTimeout(bubbleTimeout);
+      const emojiEl = document.getElementById('liveEmoji'), bubbleEl = document.getElementById('speechBubble');
+      if(!isIrritated) emojiEl.innerText = "😮";
+      bubbleEl.innerText = msg; bubbleEl.classList.add('show');
+      bubbleTimeout = setTimeout(() => { bubbleEl.classList.remove('show'); if (!isAway) startMouth(); }, 3000);
     }
     function appendMsg(user, text, isSelf = false) {
       const item = document.createElement('div');
@@ -76,18 +90,39 @@
       box.appendChild(item); box.scrollTop = box.scrollHeight;
       if (isAway) return;
       const emojiEl = document.getElementById('liveEmoji'), bubbleEl = document.getElementById('speechBubble');
+      
       if (isSelf) {
-        clearInterval(mouthInterval); emojiEl.innerText = "😮";
-        bubbleEl.innerText = `「${text}」ありがとう！`; bubbleEl.classList.add('show');
-        setTimeout(() => { bubbleEl.classList.remove('show'); if (!isAway) startMouth(); }, 3000);
+        showTalk(`「${text}」ありがとう！`);
       } else {
+        // 【新機能】イライラ状態のときにチャットが流れたら確定で大爆発（離席）する
+        if (isIrritated) {
+          isAway = true; isIrritated = false;
+          clearInterval(mouthInterval); clearTimeout(bubbleTimeout);
+          emojiEl.innerText = "😡"; emojiEl.className = "avatar-emoji away"; bubbleEl.classList.remove('show');
+          
+          // 4秒後に「挨拶を発言しながら」帰ってくる
+          setTimeout(() => {
+            emojiEl.className = "avatar-emoji floating"; isAway = false;
+            startMouth();
+            // 帰ってきた時の発言ギミック
+            showTalk(returnGratings[Math.floor(Math.random() * returnGratings.length)]);
+          }, 4000);
+          return;
+        }
+
         const rand = Math.random();
         if (rand < 0.1) {
-          isAway = true; clearInterval(mouthInterval); emojiEl.innerText = "😡"; emojiEl.className = "avatar-emoji away"; bubbleEl.classList.remove('show');
-          setTimeout(() => { emojiEl.className = "avatar-emoji floating"; isAway = false; startMouth(); }, 4000);
+          // 【新機能】10%の確率でイライラ予兆モードに突入
+          isIrritated = true;
+          clearInterval(mouthInterval);
+          emojiEl.innerText = "😐"; // 表情が真顔（不機嫌）にロックされる
+          showTalk(angryWarnings[Math.floor(Math.random() * angryWarnings.length)]);
         } else if (rand < 0.3) {
           clearInterval(mouthInterval); emojiEl.innerText = "🤪"; emojiEl.className = "avatar-emoji excited";
           setTimeout(() => { if (!isAway) { emojiEl.className = "avatar-emoji floating"; startMouth(); } }, 1500);
+        } else if (rand < 0.6) {
+          // 通常のサクラチャットへの自動返信
+          showTalk(`＞${user}さん、${replies[Math.floor(Math.random() * replies.length)]}`);
         }
       }
     }
@@ -95,6 +130,7 @@
     document.getElementById('chatInput').addEventListener('keypress', (e) => { if (e.key === 'Enter') sendChat(); });
     setInterval(() => { appendMsg(botMessages[Math.floor(Math.random() * botMessages.length)].user, botMessages[Math.floor(Math.random() * botMessages.length)].text, false); }, 2500);
     setInterval(() => { viewers += Math.floor(Math.random() * 36) - 15; document.getElementById('liveCountText').innerText = viewers.toLocaleString(); }, 3000);
+    setInterval(() => { if (!isAway && !isIrritated && !document.getElementById('speechBubble').classList.contains('show') && Math.random() < 0.5) { showTalk("（今日の配信楽しいな〜）"); } }, 5000);
     startMouth();
   </script>
 </body>
