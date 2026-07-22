@@ -27,15 +27,30 @@
     }
     .search-box:focus { outline: 1px solid #3ea6ff; }
 
-    /* 動画グリッド表示（すべて16:9の横長） */
+    /* 動画グリッド表示 */
     .grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 20px; padding: 24px; max-width: 1200px; margin: 0 auto; }
-    .video-card { text-decoration: none; color: white; cursor: pointer; display: block; }
+    .video-card { text-decoration: none; color: white; cursor: pointer; display: block; position: relative; }
     .thumbnail { width: 100%; aspect-ratio: 16/9; border-radius: 12px; display: flex; align-items: center; justify-content: center; font-size: 40px; margin-bottom: 8px; }
     .title { font-weight: bold; font-size: 16px; line-height: 1.4; }
     .author { color: #aaa; font-size: 14px; margin-top: 4px; }
     
     /* 検索非表示用 */
     .video-card.hidden { display: none; }
+
+    /* 赤いLIVEバッジ */
+    .live-badge {
+      position: absolute;
+      top: 8px;
+      left: 8px;
+      background-color: #ff0000;
+      color: white;
+      font-size: 12px;
+      font-weight: bold;
+      padding: 2px 6px;
+      border-radius: 4px;
+      letter-spacing: 0.5px;
+      box-shadow: 0 2px 4px rgba(0,0,0,0.5);
+    }
   </style>
 </head>
 <body>
@@ -46,7 +61,15 @@
   </header>
 
   <div class="grid">
-    <!-- 動画1 -->
+    <!-- ライブ配信へのリンクカード -->
+    <a href="live.html" class="video-card" data-title="【生放送】センプの😀雑談ライブ会場">
+      <div class="thumbnail" style="background: radial-gradient(circle, #ff0844 0%, #ffb199 100%);">😀</div>
+      <div class="live-badge">● LIVE</div>
+      <div class="title">【生放送】センプの😀雑談ライブ会場</div>
+      <div class="author">センプ公式チャンネル</div>
+    </a>
+
+    <!-- 動画1 【変更：データ属性、タイトル、チャンネル名を修正】 -->
     <a href="v1.html" class="video-card" data-title="ストリーチって？">
       <div class="thumbnail" style="background: linear-gradient(135deg, #00c6ff, #0072ff);">🌐</div>
       <div class="title">ストリーチって？</div>
@@ -60,7 +83,7 @@
       <div class="author">センプ公式チャンネル</div>
     </a>
 
-    <!-- 動画3（ファイル名をv3.htmlに変更しました） -->
+    <!-- 動画3 -->
     <a href="v3.html" class="video-card" data-title="チキンバトルロイヤルやってみた">
       <div class="thumbnail" style="background: linear-gradient(135deg, #ed4264, #ffedbc);">🍗</div>
       <div class="title">チキンバトルロイヤルやってみた</div>
@@ -84,7 +107,7 @@
       });
     }
 
-    // 再生ページからの検索キーワードを引き継ぐ処理
+    // 検索キーワード引き継ぎ処理
     window.addEventListener('DOMContentLoaded', () => {
       const urlParams = new URLSearchParams(window.location.search);
       const searchQuery = urlParams.get('search');
