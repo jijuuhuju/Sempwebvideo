@@ -20,13 +20,16 @@
     .btn-move { background:#272727; color:white; border:none; width:65px; height:45px; border-radius:8px; cursor:pointer; font-weight:bold; font-size:18px; }
     .btn-move:active { background:#3ea6ff; color:black; }
     .game-title { font-size:22px; font-weight:bold; margin:20px 0 10px 0; }
-    .game-desc { color:#aaa; font-size:14px; }
+    .game-desc { color:#aaa; font-size:14px; margin-top:10px; }
+    .status-text { font-size:18px; color:#00e5ff; font-weight:bold; margin-bottom:10px; }
   </style>
 </head>
 <body>
   <header><a href="index.html" class="logo">🏠 ホームへ戻る</a></header>
   <div class="game-container">
     <div class="game-title">🧩 センプ・ザ・メイズ</div>
+    <!-- 現在のクリア回数を表示するメーター -->
+    <div class="status-text" id="statusLabel">STAGE: 1 / 5</div>
     <div class="screen-wrapper"><div id="mazeContainer" class="maze-grid"></div></div>
     <div class="controls">
       <div class="row"><button class="btn-move" onclick="movePlayer(0,-1)">▲</button></div>
@@ -39,21 +42,63 @@
     <p class="game-desc">迷路を抜けて🎁を目指そう！</p>
   </div>
   <script>
-    // 文字列データに変更（W=壁, F=床, G=ゴール）
-    const mazeData = [
-      "WWWWWWWWWW",
-      "WFFFFFFFFW",
-      "WWWWWWFWFW",
-      "WFFFFWFWFW",
-      "WFWWWWWWFW",
-      "WFWFFFFWFW",
-      "WFWWBWWWFW",
-      "WFWWFFFFFW",
-      "WFFFFWWWGW",
-      "WWWWWWWWWW"
+    // 毎回形が変わるように、3パターンの迷路データを用意
+    const stagePool = [
+      [
+        "WWWWWWWWWW",
+        "WFFFFFFFFW",
+        "WWWWWWFWFW",
+        "WFFFFWFWFW",
+        "WFWWWWWWFW",
+        "WFWFFFFWFW",
+        "WFWWBWWWFW",
+        "WFWWFFFFFW",
+        "WFFFFWWWGW",
+        "WWWWWWWWWW"
+      ],
+      [
+        "WWWWWWWWWW",
+        "WFFFFWFFFF",
+        "WFWWFWWWWW",
+        "WFWWFFFFFW",
+        "WFWWWWWWBW",
+        "WFFFFFFFFW",
+        "WWWWWWWWFW",
+        "WFFFFFFFFW",
+        "WGWWWWWWWW",
+        "WWWWWWWWWW"
+      ],
+      [
+        "WWWWWWWWWW",
+        "WFFFFFFFFW",
+        "WFWWWWWWWW",
+        "WFWFFFFFFW",
+        "WFWWWWWWBW",
+        "WFFFFFFFFW",
+        "WWWWWWWWFW",
+        "WFFFFFFFFW",
+        "WGWWWWWWWW",
+        "WWWWWWWWWW"
+      ]
     ];
-    
+
+    let currentStageMap = [];
     let pX = 1, pY = 1;
+    let clearCount = 0; // クリアした回数を数える変数
+
+    // 新しい迷路ステージをランダムにセットする関数
+    function initNextStage() {
+      // プールの中からランダムに1つの形を選ぶ
+      const randomIndex = Math.floor(Math.random() * stagePool.length);
+      currentStageMap = stagePool[randomIndex];
+      
+      // スタート位置を左上にリセット
+      pX = 1; pY = 1;
+      
+      // 画面上のステージ表示を更新
+      document.getElementById('statusLabel').innerText = `STAGE: ${clearCount + 1} / 5`;
+      drawMaze();
+    }
 
     function drawMaze() {
       const container = document.getElementById('mazeContainer');
@@ -61,7 +106,7 @@
       for (let y = 0; y < 10; y++) {
         for (let x = 0; x < 10; x++) {
           const cell = document.createElement('div');
-          const type = mazeData[y][x];
+          const type = currentStageMap[y][x];
           
           cell.className = (type === "W" || type === "B") ? 'cell wall' : 'cell floor';
           
@@ -76,11 +121,23 @@
 
     function movePlayer(dx, dy) {
       const nextX = pX + dx, nextY = pY + dy;
-      if (mazeData[nextY][nextX] !== "W" && mazeData[nextY][nextX] !== "B") {
+      if (currentStageMap[nextY][nextX] !== "W" && currentStageMap[nextY][nextX] !== "B") {
         pX = nextX; pY = nextY; drawMaze();
-        if (mazeData[pY][pX] === "G") {
-          alert('ゴール！クリアおめでとう！🎉');
-          pX = 1; pY = 1; drawMaze();
+        
+        // ゴール（G）に到達した時の処理
+        if (currentStageMap[pY][pX] === "G") {
+          clearCount++; // クリア回数を1増やす
+          
+          if (clearCount >= 5) {
+            // 5回クリアを達成した時
+            alert('🎉🎉 5ステージ全クリア！完全制覇おめでとう！ 🎉🎉');
+            clearCount = 0; // カウントをリセット
+            initNextStage();
+          } else {
+            // まだ5回未満の時は次のランダムステージへ
+            alert(`ステージ ${clearCount} クリア！次の迷路に挑戦だ！🚀`);
+            initNextStage();
+          }
         }
       }
     }
@@ -92,7 +149,8 @@
       if (e.key === 'ArrowRight') { e.preventDefault(); movePlayer(1, 0); }
     });
 
-    drawMaze();
+    // 最初のステージを起動
+    initNextStage();
   </script>
 </body>
 </html>
