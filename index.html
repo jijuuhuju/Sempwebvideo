@@ -5,52 +5,21 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>センプウェブビデオ - ホーム</title>
   <style>
-    /* 全体・ヘッダー */
     body { background-color: #0f0f0f; color: #fff; font-family: Arial, sans-serif; margin: 0; }
-    header { 
-      display: flex; 
-      justify-content: space-between; 
-      align-items: center; 
-      padding: 12px 24px; 
-      border-bottom: 1px solid #272727; 
-    }
+    header { display: flex; justify-content: space-between; align-items: center; padding: 12px 24px; border-bottom: 1px solid #272727; }
     .logo { font-size: 20px; font-weight: bold; color: #3ea6ff; text-decoration: none; }
-    
-    /* 検索ボックス */
-    .search-box {
-      background: #121212;
-      border: 1px solid #303030;
-      padding: 8px 16px;
-      border-radius: 40px;
-      width: 300px;
-      color: white;
-    }
+    .search-box { background: #121212; border: 1px solid #303030; padding: 8px 16px; border-radius: 40px; width: 300px; color: white; }
     .search-box:focus { outline: 1px solid #3ea6ff; }
-
-    /* 動画グリッド表示 */
     .grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 20px; padding: 24px; max-width: 1200px; margin: 0 auto; }
     .video-card { text-decoration: none; color: white; cursor: pointer; display: block; position: relative; }
     .thumbnail { width: 100%; aspect-ratio: 16/9; border-radius: 12px; display: flex; align-items: center; justify-content: center; font-size: 40px; margin-bottom: 8px; }
     .title { font-weight: bold; font-size: 16px; line-height: 1.4; }
     .author { color: #aaa; font-size: 14px; margin-top: 4px; }
-    
-    /* 検索非表示用 */
     .video-card.hidden { display: none; }
-
-    /* 赤いLIVEバッジ */
-    .live-badge {
-      position: absolute;
-      top: 8px;
-      left: 8px;
-      background-color: #ff0000;
-      color: white;
-      font-size: 12px;
-      font-weight: bold;
-      padding: 2px 6px;
-      border-radius: 4px;
-      letter-spacing: 0.5px;
-      box-shadow: 0 2px 4px rgba(0,0,0,0.5);
-    }
+    .live-badge { position: absolute; top: 8px; left: 8px; background-color: #ff0000; color: white; font-size: 12px; font-weight: bold; padding: 2px 6px; border-radius: 4px; }
+    
+    /* ゲーム用カードを目立たせる緑バッジ */
+    .game-badge { position: absolute; top: 8px; left: 8px; background-color: #00b0ff; color: white; font-size: 12px; font-weight: bold; padding: 2px 6px; border-radius: 4px; }
   </style>
 </head>
 <body>
@@ -61,7 +30,7 @@
   </header>
 
   <div class="grid">
-    <!-- ライブ配信へのリンクカード -->
+    <!-- ライブ配信 -->
     <a href="live.html" class="video-card" data-title="【生放送】センプの😀雑談ライブ会場">
       <div class="thumbnail" style="background: radial-gradient(circle, #ff0844 0%, #ffb199 100%);">😀</div>
       <div class="live-badge">● LIVE</div>
@@ -69,17 +38,25 @@
       <div class="author">センプ公式チャンネル</div>
     </a>
 
-    <!-- 動画1 【変更：データ属性、タイトル、チャンネル名を修正】 -->
+    <!-- 【新設】独立した迷路ゲーム専用ページへのリンク（実況動画とは別です） -->
+    <a href="maze.html" class="video-card" data-title="迷路ゲーム プレイ会場">
+      <div class="thumbnail" style="background: linear-gradient(135deg, #00b0ff, #00e5ff);">🧩</div>
+      <div class="game-badge">🎮 GAME</div>
+      <div class="title">【ゲーム】迷路ゲーム プレイ会場（直接遊ぶ）</div>
+      <div class="author">センプウェブゲームズ</div>
+    </a>
+
+    <!-- 動画1 (ストリーチって？ / streech) -->
     <a href="v1.html" class="video-card" data-title="ストリーチって？">
       <div class="thumbnail" style="background: linear-gradient(135deg, #00c6ff, #0072ff);">🌐</div>
       <div class="title">ストリーチって？</div>
       <div class="author">streech</div>
     </a>
 
-    <!-- 動画2 -->
-    <a href="v2.html" class="video-card" data-title="迷路ゲーム実況をやろう！">
+    <!-- 動画2 (実況動画は実況動画として残します) -->
+    <a href="v2.html" class="video-card" data-title="【実況】神迷路ゲームをプレイしてみた">
       <div class="thumbnail" style="background: linear-gradient(135deg, #fe8c00, #f83600);">🎮</div>
-      <div class="title">迷路ゲーム実況をやろう！</div>
+      <div class="title">【実況】神迷路ゲームをプレイしてみた</div>
       <div class="author">センプ公式チャンネル</div>
     </a>
 
@@ -92,28 +69,20 @@
   </div>
 
   <script>
-    // タイトルで動画を絞り込む関数
     function filterVideos() {
       const query = document.getElementById('searchBox').value.toLowerCase();
       const cards = document.querySelectorAll('.video-card');
-
       cards.forEach(card => {
         const title = card.getAttribute('data-title').toLowerCase();
-        if (title.includes(query)) {
-          card.classList.remove('hidden');
-        } else {
-          card.classList.add('hidden');
-        }
+        card.classList.toggle('hidden', !title.includes(query));
       });
     }
 
-    // 検索キーワード引き継ぎ処理
     window.addEventListener('DOMContentLoaded', () => {
       const urlParams = new URLSearchParams(window.location.search);
       const searchQuery = urlParams.get('search');
       if (searchQuery) {
-        const searchBox = document.getElementById('searchBox');
-        searchBox.value = searchQuery;
+        document.getElementById('searchBox').value = searchQuery;
         filterVideos();
       }
     });
